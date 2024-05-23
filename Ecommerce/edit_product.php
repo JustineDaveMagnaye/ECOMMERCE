@@ -1,41 +1,35 @@
 <?php
 session_start();
-
-// Check if user is logged in as admin, if not, redirect to login page
-if (!isset($_SESSION['email']) || $_SESSION['email'] !== "") {
+if ($_SESSION['username'] !== "admin") {
     header("Location: login.php");
     exit();
 }
 
-// Database connection details
 $servername = "localhost";
 $username_db = "root";
 $password_db = "";
 $database = "ecommerce";
 
-// Create connection
 $conn = new mysqli($servername, $username_db, $password_db, $database);
 
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Initialize variables for product details
 $product_id = $product_name = $product_price = "";
 $error_message = "";
 
-// Retrieve product details from database
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['id'])) {
     $product_id = $_GET['id'];
     
-    $sql = "SELECT name, price, image FROM products WHERE id = $product_id";
+    $sql = "SELECT name, price, image, quantity FROM products WHERE id = $product_id";
     $result = $conn->query($sql);
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         $product_name = $row['name'];
         $product_price = $row['price'];
+        $product_quantity = $row['quantity'];
         $product_image = $row['image'];
     } else {
         $error_message = "Product not found.";
@@ -46,13 +40,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_product'])) {
     $product_id = $_POST['product_id'];
     $product_name = $_POST['product_name'];
     $product_price = $_POST['product_price'];
+    $product_quantity = $_POST['product_quantity'];
 
     $product_image = uniqid() . '-' . $_FILES['image']['name'];
     $tempname = $_FILES['image']['tmp_name'];
     $folder = 'productimage/'.$product_image;
 
 
-    $query = mysqli_query($conn, "UPDATE products SET name='$product_name', price='$product_price', image='$product_image'");
+    $query = mysqli_query($conn, "UPDATE products SET name='$product_name', price='$product_price', quantity='$product_quantity', image='$product_image'");
     
     if(move_uploaded_file($tempname, $folder)) {
         $success_message = "Product adding successfully.";
@@ -207,7 +202,10 @@ $conn->close();
                     <label for="product_price">Product Price:</label><br>
                     <input type="number" id="product_price" name="product_price" min="0" step="0.01" value="<?= $product_price ?>" required><br>
                 </div>
-
+                <div class="form-group">
+                    <label for="product_quantity">Product Quantity:</label><br>
+                    <input type="number" id="product_quantity" name="product_quantity" min="0" step="0.01" value="<?= $product_quantity ?>" required><br>
+                </div>
                 <div class="form-group">
                     <label for="image">Product Image:</label><br>
                     <img src="productimage/<?= $product_image ?>" class="product-image">
